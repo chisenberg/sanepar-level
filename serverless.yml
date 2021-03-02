@@ -1,0 +1,61 @@
+service: sanepar-level
+
+package:
+  exclude:
+    - ./**
+  include:
+    - ./bin/**
+
+custom:
+  env:
+    dev:
+      DYNAMO_TABLE: sanepar-level-dev
+    prod:
+      DYNAMO_TABLE: sanepar-level
+
+provider:
+  name: aws
+  runtime: go1.x
+  memorySize: 128
+  stage: ${opt:stage,'dev'}
+  region: us-east-1
+  lambdaHashingVersion: 20201221
+  timeout: 10
+
+  environment:
+    DYNAMO_TABLE: ${self:custom.env.${self:provider.stage}.DYNAMO_TABLE}
+
+  iam:
+    role:
+      statements:
+        ## Objects
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+          Resource: "*"
+
+functions:
+  sanepar-level:
+    handler: bin/sanepar-level
+    # events:
+    #   - schedule: cron(*/2 * * * ? *)
+
+resources:
+  Resources:
+    SaneparLevelDynamoDbTable:
+      Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "datetime"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "datetime"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.env.${self:provider.stage}.DYNAMO_TABLE}
