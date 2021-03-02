@@ -13,8 +13,8 @@ import (
 )
 
 type reportItem struct {
-	datetime string
-	dams     []entity.Dam
+	Datetime string       `json:"datetime"`
+	Dams     []entity.Dam `json:"dams"`
 }
 
 // SaveReport -
@@ -27,8 +27,8 @@ func SaveReport(report entity.Report) error {
 	svc := dynamodb.New(sess)
 
 	item := reportItem{
-		datetime: report.UpdatedAt.Format(time.RFC3339),
-		dams:     report.Dams,
+		Datetime: report.UpdatedAt.Format(time.RFC3339),
+		Dams:     report.Dams,
 	}
 
 	av, err := dynamodbattribute.MarshalMap(item)
@@ -40,6 +40,7 @@ func SaveReport(report entity.Report) error {
 
 	// Create item in table Movies
 	tableName := os.Getenv("DYNAMO_TABLE")
+	fmt.Println("tablename ", tableName)
 
 	input := &dynamodb.PutItemInput{
 		Item:      av,
